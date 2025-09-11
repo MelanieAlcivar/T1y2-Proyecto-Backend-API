@@ -25,7 +25,8 @@
   "homepage": "https://github.com/MelanieAlcivar/Bootcamp-2025-Clase-1#readme",
   "dependencies": {
     "express": "^5.1.0",
-    "express-validator": "^7.2.1"
+    "express-validator": "^7.2.1",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
