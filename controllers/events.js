@@ -1,14 +1,21 @@
 const router = require('express').Router();
-const { body, query, validationResult} = require('express-validator');
+const { body, param, query, validationResult} = require('express-validator');
 
 /*Models*/
 const Events = require('../../models/Events');
 
-
+const validateEventBody = [
+  body('name').isString().notEmpty(),
+  body('description').optional().isString(),
+  body('amount').isNumeric(),
+  body('date').isISO8601().toDate(),
+  body('type').isIn(['income', 'expense']),
+  body('attached').optional().isString(),
+];
 
 //Entity: Events
-//GET ALL EVENTS (con paginación y filtros)
-router.get('/', async (req, res) => {
+//GET/api/events listar todo (páginación y filtros)
+router.get('/', validateEventBody, async (req, res) => {
     try {
         const { page = 1, limit = 10, type, sortBy ="date", order = "desc" } = req.query; 
 

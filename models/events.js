@@ -1,12 +1,46 @@
-const mongoose = require('mongoose');
+const Event = require('../schemas/event');
 
-const eventSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    description: { type: String },
-    amount: { type: Number, required: true },
-    date: { type: Date, required: true },
-    type: { type: String, enum: ['income', 'expense'], required: true },
-    attached: { type: String, default: null }, // puede ser URL o base64
-}, { timestamps: true });
 
-module.exports = mongoose.model('Event', eventSchema);
+
+const getAllEvent = (callback) => {
+    Event.Event.find()
+        .then(results => callback(null, results))
+        .catch(err => callback(err));
+};
+
+
+const getEventById = (id, callback) => {
+   Event.Event.findById(id)
+        .then(result => callback(null, result))
+        .catch(err => callback(err));
+};
+
+
+const saveEvent = (user, callback) => {
+    const newEvent = new Event.Event(eventData);
+    newEvent.save()
+        .then(saved => callback(null, saved))
+        .catch(err => callback(err));
+};
+
+
+const updateEvent = (id, eventData, callback) => {
+    Event.Event.findByIdAndUpdate(id, eventData, { new: true })
+        .then(updated => callback(null, updated))
+        .catch(err => callback(err));
+};
+
+
+const deleteEvent = (id, callback) => {
+    Event.Event.findByIdAndDelete(id)
+        .then(deleted => callback(null, deleted))
+        .catch(err => callback(err));
+};
+
+module.exports = {
+    getAllEvent,
+    getEventById,
+    saveEvent,
+    updateEvent,
+    deleteEvent
+}
