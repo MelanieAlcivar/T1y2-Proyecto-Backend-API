@@ -2,11 +2,22 @@ const express = require ('express');
 const { body, param, query, validationResult } = require ('express-validator');
 const { v4: uuidv4 } = require('uuid');
 
+/** Db */
+const mongoose = require('./db');
+
+/** Middleware */
+const performance = require('./middlewares/performance');
+
+/**Controllers */
+const usersv1 = require ('./controllers/v1/users');
+
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 const app = express();
 app.use (express.json());
-
+app.use (performance);
 
 // Puerto 3030
 const PORT = 3030;
