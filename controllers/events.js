@@ -56,7 +56,7 @@ router.get ('/', validateEventQuery, (req, res) => {
   const filter = type ? { type } : {};
 
   Events.getAllEvent((err, events) => {
-    if (err) return res.status(500).json({ code: 'ERR', message: 'Error retrieving events!' });
+    if (err) return res.status(500).json({ code: 'ER', message: 'Error retrieving events!' });
 
     // Filtrado por tipo
     let filtered =events;
@@ -92,11 +92,11 @@ router.get ('/', validateEventQuery, (req, res) => {
 
 // Get/api/events/:id
 router.get ('/:id', validateEventId, (req, res) => {
-  if (handleValidationEErrors (req, res)) return;
+  if (handleValidationErrors (req, res)) return;
 
   Events.getEventById(req.params.id, (err, event) => {
     if (err) return res.status(500).json({ code: 'ER', message: 'Error retrieving event!' });
-    if (!event) return res.status(404).json ({ code: 'NF', message: 'Error not found!'});
+    if (!event) return res.status(404).json ({ code: 'NF', message: 'Event not found!'});
     
     res.json({ code: 'OK', message: 'Event retrieved successfully!', data: { event } });
   });
@@ -108,13 +108,14 @@ router.post ('/', validateEventCreate, (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
   const { name, description, amount, date, type, attached } = req.body;
-  const newEvent = { name, description, amount, date, type, attached };
+  const newEvent = { name, description, amount, date, type, attached: attached || null };
 
   Events.saveEvent(newEvent, (err, saved) => {
-    if (err) return res.status(500).json({ code: 'ERR', message: 'Error saving event!' });
-    res.json({ code: 'OK', message: 'Event saved successfully!', data: { event: savedEvent } });
+    if (err) return res.status(500).json({ code: 'ER', message: 'Error saving event!' });
+    res.json({ code: 'OK', message: 'Event saved successfully!', data: { event: saved } });
   });
 });
+
 
 
 // Put/api/events/:id
@@ -137,7 +138,7 @@ router.delete ('/:id', validateEventId, (req, res) => {
     if (err) return res.status(500).json({ code: 'ER', message: 'Error deleting event!' });
     if (!deleted) return res.status(404).json({ code: 'NF', message: 'Event not found!' });
 
-    res.json({ code:'Ok', message: 'Event deleted successfully!', data: { event: deleted } });
+    res.json({ code:'OK', message: 'Event deleted successfully!', data: { event: deleted } });
   });
 });
 
