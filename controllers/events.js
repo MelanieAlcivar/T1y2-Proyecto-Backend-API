@@ -4,134 +4,141 @@ const { body, param, query, validationResult} = require('express-validator');
 /*Models*/
 const Events = require('../../models/Events');
 
-const validateEventBody = [
-  body('name').isString().notEmpty(),
-  body('description').optional().isString(),
-  body('amount').isNumeric(),
-  body('date').isISO8601().toDate(),
-  body('type').isIn(['income', 'expense']),
-  body('attached').optional().isString(),
+/* Validar errores */
+const handleValidationErrors = (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        res.status(400).json({ code: 'VAL', errors: errors.array() });
+        return true; // hubo error
+    }
+    return false;
+};
+
+
+/*Validaciones*/
+const validateEventCreate = [
+    body('name').notEmpty().withMessage('El nombre es requerido'),
+    body('description').isString().withMessage('La descripción debe ser texto'),
+    body('amount').isNumeric().withMessage('El monto debe ser numérico'),
+    body('date').isISO8601().withMessage('La fecha debe estar en formato YYYY-MM-DD'),
+    body('type').isIn(['income', 'expense']).withMessage('El tipo debe ser income o expense'),
+    body('attached').optional().isString().withMessage('El campo attached debe ser texto')
 ];
 
-//Entity: Events
-//GET/api/events listar todo (páginación y filtros)
-router.get('/', validateEventBody, async (req, res) => {
-    try {
-        const { page = 1, limit = 10, type, sortBy ="date", order = "desc" } = req.query; 
+const validateEventUpdate = [
+    param('id').isMongoId().withMessage('ID inválido'),
+    body('name').optional().notEmpty(),
+    body('description').optional().isString(),
+    body('amount').optional().isNumeric(),
+    body('date').optional().isISO8601(),
+    body('type').optional().isIn(['income', 'expense']),
+    body('attached').optional().isString()
+];
 
-        const filters = { deleted: false };
-        if (type) {
-            filters.type = type;
-        }
+const validateEventId = [
+    param('id').isMongoId().withMessage('ID inválido')
+];
 
-        const events = await Events.find(filters)
-            .sort({ [sortBy]: order === 'desc' ? -1 : 1 })
-            .skip((page - 1) * limit)
-            .limit(parseInt(limit));
+const validateEventQuery = [
+    query('page').optional().isInt({ min: 1 }).withMessage('Page debe ser un número >=1'),
+    query('limit').optional().isInt({ min: 1 }).withMessage('Limit debe ser un número >=1'),
+    query('type').optional().isIn(['income', 'expense']).withMessage('Type inválido'),
+    query('sortBy').optional().isIn(['date', 'amount', 'name']).withMessage('sortBy inválido')
+];
 
-        const total = await Events.countDocuments(filters);
 
-        res.json({
-            code: 'OK',
-            message: 'Events retrieved successfully!',
-            data: {
-                page: Number(page),
-                totalPages: Math.ceil(total / limit),
-                total,
-                events,
-            },
-        });
-    } catch (err) {
-        res.status(500).json({ code: 'ER', message: 'Error retrieving events!', error: err.message});
-        }
+
+// Get/api/events
+router.get ('/', validateEventQuery, (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
+  const { page = 1, limit = 5, type, sortBy ='date' } = req.query;
+  const filter = type ? { type } : {};
+
+  Events.getAllEvent((err, events) => {
+    if (err) return res.status(500).json({ code: 'ERR', message: 'Error retrieving events!' });
+
+    // Filtrado por tipo
+    let filtered =events;
+    if (type) filtered = events.filter(e => e.type === type);
+
+    // Ordenar
+    filtered.sort((a, b) => {
+      if (sortBy === 'date' ) return new Date(a.date) - new Date(b.date);
+      if (sortBy === 'amount') return a.amount - b.amount;
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      return 0;
     });
 
+    // Paginación
+    const start = (page - 1) * limit;
+    const paginated = filtered.slice(start, start + Number(limit));
 
-
-
-//GET EVENT BY ID
-router.get("/:id", async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-    if (!event || event.deleted) {
-      return res.status(404).json({ code: "NF", message: "Event not found!" });
-    }
-    res.json({ code: "OK", message: "Event found!", data: { event } });
-  } catch (err) {
-    res.status(400).json({ code: "PF", message: "Invalid ID format!" });
-  }
+    res.json ({
+      code: 'OK',
+      message: 'Events retrieved successfully!',
+      data: {
+        events: paginated,
+        total: filtered.length,
+        page: Number(page),
+        limit: Number(limit)
+      }
+      
+    });
+  });
 });
 
 
 
+// Get/api/events/:id
+router.get ('/:id', validateEventId, (req, res) => {
+  if (handleValidationEErrors (req, res)) return;
 
-//POST - CREATE EVENT
-router.post('/', async (req, res) => {
-    try {
-        const newEvent = new Event(req.body);
-    await newEvent.save();
-    res.status(201).json({
-      code: "OK",
-      message: "Event created successfully!",
-      data: { event: newEvent },
-    });
-  } catch (err) {
-    res.status(400).json({ code: "ER", message: "Error creating event!", error: err.message });
-  }
-});
-
-
-
-
-//PUT - UPDATE EVENT
-router.put('/:id', async (req, res) => {
-    try {
-    const updatedEvent = await Event.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-    if (!updatedEvent) {
-      return res.status(404).json({ code: "NF", message: "Event not found!" });
-    }
-    res.json({ code: "OK", message: "Event updated successfully!", data: { event: updatedEvent } });
-  } catch (err) {
-    res.status(400).json({ code: "ER", message: "Error updating event!", error: err.message });
-  }
-});
-
+  Events.getEventById(req.params.id, (err, event) => {
+    if (err) return res.status(500).json({ code: 'ER', message: 'Error retrieving event!' });
+    if (!event) return res.status(404).json ({ code: 'NF', message: 'Error not found!'});
     
-
-
-
-//DELETE
-
-/*router.delete('/:id', (req, res) => {
-    const id = req.params.id;
-    console.log('DELETE /events/:id:',id);
-    const event = users.find(event => event.id == id);
-    if (event) {
-        events = events.filter(event => event.id != id);
-        return res.json({ code: 'OK', message: 'Event deleted!', data: { event}})
-    }
-    res.status(404).json({ code: 'PF', message: 'Event not found!'});
-});*/
-
-router.delete("/:id", async (req, res) => {
-  try {
-    const deletedEvent = await Event.findByIdAndUpdate(
-      req.params.id,
-      { deleted: true },
-      { new: true }
-    );
-    if (!deletedEvent) {
-      return res.status(404).json({ code: "NF", message: "Event not found!" });
-    }
-    res.json({ code: "OK", message: "Event deleted (logical)!", data: { event: deletedEvent } });
-  } catch (err) {
-    res.status(400).json({ code: "PF", message: "Invalid ID format!" });
-  }
+    res.json({ code: 'OK', message: 'Event retrieved successfully!', data: { event } });
+  });
 });
 
 
+// Post/api/events
+router.post ('/', validateEventCreate, (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
+  const { name, description, amount, date, type, attached } = req.body;
+  const newEvent = { name, description, amount, date, type, attached };
+
+  Events.saveEvent(newEvent, (err, saved) => {
+    if (err) return res.status(500).json({ code: 'ERR', message: 'Error saving event!' });
+    res.json({ code: 'OK', message: 'Event saved successfully!', data: { event: savedEvent } });
+  });
+});
+
+
+// Put/api/events/:id
+router.put ('/:id', validateEventUpdate, (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
+  Events.updateEvent(req.params.id, req.body, (err, updated) => {
+    if (err) return res.status(500).json({ code: 'ER', message: 'Error updating event!' });
+    if (!updated) return res.status(404).json({ code: 'NF', message: 'Event not found!' });
+
+    res.json ({ code:'OK', message: 'Event updated successfully!', data: { event: updated } });
+  });
+});
+
+// Delete/api/events/:id
+router.delete ('/:id', validateEventId, (req, res) => {
+  if (handleValidationErrors(req, res)) return;
+
+  Events.deleteEvent(req.params.id, (err, deleted) => {
+    if (err) return res.status(500).json({ code: 'ER', message: 'Error deleting event!' });
+    if (!deleted) return res.status(404).json({ code: 'NF', message: 'Event not found!' });
+
+    res.json({ code:'Ok', message: 'Event deleted successfully!', data: { event: deleted } });
+  });
+});
 
 module.exports = router;
