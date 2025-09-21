@@ -2,7 +2,7 @@ const router = require('express').Router();
 const { body, param, query, validationResult} = require('express-validator');
 
 /*Models*/
-const Events = require('../../models/Events');
+const Events = require('../models/events');
 
 /* Validar errores */
 const handleValidationErrors = (req, res) => {

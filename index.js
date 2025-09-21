@@ -35,7 +35,7 @@ app.use('/api/events', eventsRouter);
 /* Error inesperado (500) */
 app.use((err, req, res, next) => {
   console.error(err);
-  res.status(500).json({ code: 'ERR', message: 'Internal Server Error' });
+  res.status(500).json({ code: 'ER', message: 'Internal Server Error' });
 });
 
 /* Iniciar servidor */

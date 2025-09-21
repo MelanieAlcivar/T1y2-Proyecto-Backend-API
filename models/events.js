@@ -1,4 +1,4 @@
-const Event = require('../schemas/event');
+const Event = require('../schemas/events');
 
 
 
@@ -16,7 +16,7 @@ const getEventById = (id, callback) => {
 };
 
 
-const saveEvent = (user, callback) => {
+const saveEvent = (eventData, callback) => {
     const newEvent = new Event.Event(eventData);
     newEvent.save()
         .then(saved => callback(null, saved))
