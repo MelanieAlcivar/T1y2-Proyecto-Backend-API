@@ -1,0 +1,40 @@
+{
+  "name": "bootcamp-2025-clase-1",
+  "version": "1.0.0",
+  "description": "This is an example",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MelanieAlcivar/Bootcamp-2025-Clase-1.git"
+  },
+  "keywords": [
+    "example",
+    "node.js",
+    "express",
+    "basic"
+  ],
+  "author": "Melanie Alcivar <mpalcivar98@hotmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/MelanieAlcivar/Bootcamp-2025-Clase-1/issues"
+  },
+  "homepage": "https://github.com/MelanieAlcivar/Bootcamp-2025-Clase-1#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.18.1",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
