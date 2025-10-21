@@ -1,5 +1,8 @@
 const router = require('express').Router();
-const { body, param, query, validationResult} = require('express-validator');
+const { body, param, query, validationResult} = require('express-validator')
+const jwtAuth = require('../middlewares/jwtAuth');
+const basicAuthMiddleware = require('../middlewares/basicAuth');
+
 
 /*Models*/
 const Events = require('../models/events');
@@ -49,7 +52,7 @@ const validateEventQuery = [
 
 
 // Get/api/events
-router.get ('/', validateEventQuery, (req, res) => {
+router.get ('/', jwtAuth, validateEventQuery, (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
   const { page = 1, limit = 5, type, sortBy ='date' } = req.query;
@@ -91,7 +94,7 @@ router.get ('/', validateEventQuery, (req, res) => {
 
 
 // Get/api/events/:id
-router.get ('/:id', validateEventId, (req, res) => {
+router.get ('/:id',jwtAuth, validateEventId, (req, res) => {
   if (handleValidationErrors (req, res)) return;
 
   Events.getEventById(req.params.id, (err, event) => {
@@ -104,7 +107,7 @@ router.get ('/:id', validateEventId, (req, res) => {
 
 
 // Post/api/events
-router.post ('/', validateEventCreate, (req, res) => {
+router.post ('/',jwtAuth, validateEventCreate, (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
   const { name, description, amount, date, type, attached } = req.body;
@@ -119,7 +122,7 @@ router.post ('/', validateEventCreate, (req, res) => {
 
 
 // Put/api/events/:id
-router.put ('/:id', validateEventUpdate, (req, res) => {
+router.put ('/:id', jwtAuth, validateEventUpdate, (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
   Events.updateEvent(req.params.id, req.body, (err, updated) => {
@@ -131,7 +134,7 @@ router.put ('/:id', validateEventUpdate, (req, res) => {
 });
 
 // Delete/api/events/:id
-router.delete ('/:id', validateEventId, (req, res) => {
+router.delete ('/:id', jwtAuth, validateEventId, (req, res) => {
   if (handleValidationErrors(req, res)) return;
 
   Events.deleteEvent(req.params.id, (err, deleted) => {
@@ -141,5 +144,10 @@ router.delete ('/:id', validateEventId, (req, res) => {
     res.json({ code:'OK', message: 'Event deleted successfully!', data: { event: deleted } });
   });
 });
+
+
+
+
+
 
 module.exports = router;
